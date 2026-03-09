@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "report_name": "Worker Privacy Report Card",
+  "overall_status": "PASS",
+  "generated_at_utc": "2026-03-09T19:20:25.994Z",
+  "source_repo": "https://github.com/tubularity/uniform-zk",
+  "source_commit_sha": "21bda10902544966fbbe05ddb8ad87011d3281ba",
+  "verification_run_url": null,
+  "details_url": "https://github.com/uniform-proof/uniform-proof/blob/main/status/privacy-report-card.md",
+  "checks": [
+    {
+      "name": "Privacy hardening guardrails",
+      "command": "npm run check:privacy-hardening --workspace=apps/web",
+      "status": "PASS",
+      "exit_code": 0,
+      "duration_ms": 1785
+    },
+    {
+      "name": "Privacy hardening QA suite",
+      "command": "npm run test --workspace=apps/web -- src/server/domains/__tests__/privacy-hardening-qa.test.js",
+      "status": "PASS",
+      "exit_code": 0,
+      "duration_ms": 1872
+    },
+    {
+      "name": "Billing gate auth suite",
+      "command": "npm run test --workspace=apps/web -- src/server/domains/__tests__/auth-domain-billing-gate.test.js",
+      "status": "PASS",
+      "exit_code": 0,
+      "duration_ms": 820
+    }
+  ]
+}
