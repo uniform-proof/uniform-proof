@@ -514,6 +514,9 @@ describe("privacy hardening QA smoke", () => {
     body.append("organization", "new-b2c-org");
     body.append("organizationName", "Test Employer");
     body.append("b2cOrganizationData", JSON.stringify({ name: "Test Employer" }));
+    body.append("birthday", "1990-01-01");
+    body.append("age_attestation", "true");
+    body.append("policy_version", "2026-03-11-16plus-v1");
     body.append("iap_provider", "stripe");
     body.append("iap_transaction_id", "sub_test_123");
 
@@ -561,6 +564,9 @@ describe("privacy hardening QA smoke", () => {
     body.append("organization", "new-b2c-org");
     body.append("organizationName", "Crypto Employer");
     body.append("b2cOrganizationData", JSON.stringify({ name: "Crypto Employer" }));
+    body.append("birthday", "1990-01-01");
+    body.append("age_attestation", "true");
+    body.append("policy_version", "2026-03-11-16plus-v1");
     body.append("iap_provider", "crypto");
     body.append("iap_transaction_id", "inv_123");
 
@@ -607,6 +613,9 @@ describe("privacy hardening QA smoke", () => {
     body.append("signingPublicKey", "sign_pub");
     body.append("organization", "existing-employer-id");
     body.append("organizationName", "Existing Employer");
+    body.append("birthday", "1990-01-01");
+    body.append("age_attestation", "true");
+    body.append("policy_version", "2026-03-11-16plus-v1");
     body.append("is_b2c_signup", "true");
     body.append("iap_provider", "stripe");
     body.append("iap_transaction_id", "sub_test_456");
