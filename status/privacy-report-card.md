@@ -1,10 +1,10 @@
 # Worker Privacy Report Card
 
-- Overall status: **PASS**
-- Generated at (UTC): 2026-03-11T02:51:21.151Z
+- Overall status: **FAIL**
+- Generated at (UTC): 2026-03-13T18:00:33.259Z
 - Source repo: https://github.com/tubularity/uniform-zk
-- Source commit: `de65b4769b162a2d49a9bc277858b714d9e07925`
-- Verification run: https://github.com/tubularity/uniform-zk/actions/runs/22934348175
+- Source commit: `aaef13f59e2f515cd4c8f163f348d099aec879e9`
+- Verification run: https://github.com/tubularity/uniform-zk/actions/runs/23063908837
 - Claim map: https://github.com/uniform-proof/uniform-proof/blob/main/status/worker-privacy-claim-map.json
 - Verifier source snapshot: https://github.com/uniform-proof/uniform-proof/tree/main/status/verifier-source
 
@@ -12,9 +12,9 @@
 
 | Check | Status | Duration (ms) |
 | --- | --- | ---: |
-| Privacy hardening guardrails | PASS | 1795 |
-| Privacy hardening QA suite | PASS | 2087 |
-| Billing gate auth suite | PASS | 1780 |
+| Privacy hardening guardrails | FAIL | 2242 |
+| Privacy hardening QA suite | FAIL | 2249 |
+| Billing gate auth suite | PASS | 2027 |
 
 ## Commands
 
@@ -24,11 +24,13 @@
 
 ## Claims Covered
 
-- `no_contact_fields_in_worker_runtime`: Worker runtime account/session/content records do not include real-name, personal email, or phone identity fields.
+- `no_contact_fields_in_worker_runtime`: Active worker account, session, and protected-content records do not include real-name, personal email, or phone identity fields.
 - `no_auth_session_ip_persistence`: Worker app auth/session records are structured without stored IP or browser/device fingerprint fields.
 - `wake_only_push_payloads`: Push payloads are reduced to wake/action references and exclude message-body or sender-context metadata.
-- `actor_id_redaction_mode`: Content responses in worker runtime redact direct account IDs and expose actor identifiers in actor mode.
+- `actor_id_redaction_mode`: Active worker content records and client-visible payloads use scoped actor identifiers and omit direct account-ID fields.
+- `legacy_union_contact_linking_removed`: Legacy union contact-linking surfaces and runtime linkage tables are removed from active proof scope, and the former member-profile endpoint is an explicit 410 tombstone.
+- `legacy_worker_linkage_tables_removed`: Legacy worker linkage tables used for member-profile/contact-linking and old entitlement/auth-linkage flows are absent from the runtime schema snapshot.
 - `billing_gate_fails_closed`: Billing-gated worker sign-in is denied when membership pass is missing, invalid, inactive, or verification is unavailable.
 
-This report verifies application/runtime privacy controls for worker accounts.
+This report publishes reproducible verification evidence for worker-account privacy controls.
 It does not attest to external infrastructure/provider logs outside app DB scope.

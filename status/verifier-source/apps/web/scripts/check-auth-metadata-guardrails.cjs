@@ -6,6 +6,13 @@ const path = require("path");
 const webRoot = path.resolve(__dirname, "..");
 const repoRoot = path.resolve(webRoot, "..", "..");
 const supabaseConfigPath = path.join(webRoot, "uniform-zk-db", "supabase", "config.toml");
+const sessionMigrationPath = path.join(
+  webRoot,
+  "uniform-zk-db",
+  "supabase",
+  "migrations",
+  "20260305010000_hard_cut_app_sessions.sql",
+);
 const sourceExtensions = new Set([".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"]);
 
 const sourceRoots = [
@@ -21,6 +28,13 @@ const forbiddenCodePatterns = [
 
 const forbiddenIdentifiers = [
   { label: "legacy account_auth_identities coupling", regex: /\baccount_auth_identities\b/ },
+];
+
+const forbiddenSessionColumnPatterns = [
+  { label: "ip column", regex: /\bip(_address)?\b/i },
+  { label: "fingerprint column", regex: /\bfingerprint\b/i },
+  { label: "user_agent column", regex: /\buser_agent\b/i },
+  { label: "browser column", regex: /\bbrowser\b/i },
 ];
 
 function walk(dir, files = []) {
@@ -89,10 +103,39 @@ function validateSupabaseAuthConfig() {
   return failures;
 }
 
+function validateSessionMigration() {
+  if (!fs.existsSync(sessionMigrationPath)) {
+    return [`Missing session migration: ${path.relative(repoRoot, sessionMigrationPath)}`];
+  }
+
+  const source = fs.readFileSync(sessionMigrationPath, "utf8");
+  const failures = [];
+
+  if (!source.includes("CREATE TABLE IF NOT EXISTS public.account_session_challenges")) {
+    failures.push("account_session_challenges table definition is missing");
+  }
+
+  for (const check of forbiddenSessionColumnPatterns) {
+    if (check.regex.test(source)) {
+      failures.push(`session migration contains forbidden ${check.label}`);
+    }
+  }
+
+  return failures;
+}
+
 const failures = [];
 
 const configFailures = validateSupabaseAuthConfig();
 for (const failure of configFailures) {
+  failures.push({
+    type: "config",
+    message: failure,
+  });
+}
+
+const sessionFailures = validateSessionMigration();
+for (const failure of sessionFailures) {
   failures.push({
     type: "config",
     message: failure,

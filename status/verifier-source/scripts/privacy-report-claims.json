@@ -5,7 +5,7 @@
   "claims": [
     {
       "id": "no_contact_fields_in_worker_runtime",
-      "statement": "Worker runtime account/session/content records do not include real-name, personal email, or phone identity fields.",
+      "statement": "Active worker account, session, and protected-content records do not include real-name, personal email, or phone identity fields.",
       "validated_by_checks": [
         "Privacy hardening guardrails",
         "Privacy hardening QA suite"
@@ -27,9 +27,23 @@
     },
     {
       "id": "actor_id_redaction_mode",
-      "statement": "Content responses in worker runtime redact direct account IDs and expose actor identifiers in actor mode.",
+      "statement": "Active worker content records and client-visible payloads use scoped actor identifiers and omit direct account-ID fields.",
       "validated_by_checks": [
         "Privacy hardening QA suite",
+        "Privacy hardening guardrails"
+      ]
+    },
+    {
+      "id": "legacy_union_contact_linking_removed",
+      "statement": "Legacy union contact-linking surfaces and runtime linkage tables are removed from active proof scope, and the former member-profile endpoint is an explicit 410 tombstone.",
+      "validated_by_checks": [
+        "Privacy hardening guardrails"
+      ]
+    },
+    {
+      "id": "legacy_worker_linkage_tables_removed",
+      "statement": "Legacy worker linkage tables used for member-profile/contact-linking and old entitlement/auth-linkage flows are absent from the runtime schema snapshot.",
+      "validated_by_checks": [
         "Privacy hardening guardrails"
       ]
     },

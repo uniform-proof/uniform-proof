@@ -31,6 +31,7 @@ const checks = [
 ];
 
 const verifierSourceFiles = [
+  ".github/workflows/privacy-report-card.yml",
   "scripts/privacy-report-card.cjs",
   "scripts/privacy-report-claims.json",
   "apps/web/scripts/check-boundary.cjs",
@@ -41,6 +42,12 @@ const verifierSourceFiles = [
   "apps/web/scripts/check-billing-vault-integration.cjs",
   "apps/web/scripts/check-actor-id-mode.cjs",
   "apps/web/scripts/check-auth-metadata-guardrails.cjs",
+  "apps/web/scripts/check-db-privacy-schema.cjs",
+  "apps/web/scripts/check-union-runtime-removal.cjs",
+  "apps/web/uniform-zk-db/supabase/migrations/20260305010000_hard_cut_app_sessions.sql",
+  "apps/web/uniform-zk-db/supabase/migrations/20260306011000_add_billing_gated_accounts.sql",
+  "apps/web/uniform-zk-db/supabase/migrations/20260311110000_actor_hard_cut_cleanup.sql",
+  "apps/web/uniform-zk-db/supabase/schema.sql",
   "apps/web/src/server/domains/__tests__/privacy-hardening-qa.test.js",
   "apps/web/src/server/domains/__tests__/auth-domain-billing-gate.test.js",
 ];
@@ -120,17 +127,8 @@ function sha256File(filePath) {
 }
 
 function loadClaimMap() {
-  try {
-    const raw = fs.readFileSync(localClaimMapPath, "utf8");
-    return JSON.parse(raw);
-  } catch {
-    return {
-      schema_version: 1,
-      report_name: "Worker Privacy Report Card",
-      scope: "worker_accounts",
-      claims: [],
-    };
-  }
+  const raw = fs.readFileSync(localClaimMapPath, "utf8");
+  return JSON.parse(raw);
 }
 
 function writeClaimMap(outDir, claimMap) {
@@ -150,11 +148,7 @@ function copyVerifierSources(outDir) {
   for (const relativePath of verifierSourceFiles) {
     const sourcePath = path.join(repoRoot, relativePath);
     if (!fs.existsSync(sourcePath)) {
-      files.push({
-        path: `verifier-source/${relativePath}`,
-        exists: false,
-      });
-      continue;
+      throw new Error(`Missing verifier-source file: ${relativePath}`);
     }
 
     const targetPath = path.join(outputRoot, relativePath);
@@ -246,7 +240,7 @@ function buildMarkdown(report) {
     }
   }
   lines.push("");
-  lines.push("This report verifies application/runtime privacy controls for worker accounts.");
+  lines.push("This report publishes reproducible verification evidence for worker-account privacy controls.");
   lines.push("It does not attest to external infrastructure/provider logs outside app DB scope.");
   return `${lines.join("\n")}\n`;
 }

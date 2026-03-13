@@ -934,6 +934,10 @@ describe("privacy hardening QA smoke", () => {
         displayHandle: "anon_me",
       }),
       isActorIdModeEnabled: jest.fn(() => true),
+      resolveContextAccountIdsByActorPairs: jest
+        .fn()
+        .mockResolvedValue(new Map([["ctx_1:actor_other", "acct_other"]])),
+      resolveContextAccountIdByActorId: jest.fn().mockResolvedValue("acct_other"),
       resolveContextActorIdentityMap: jest.fn().mockImplementation(async (_supabase, pairs) => {
         if (!Array.isArray(pairs) || pairs.length === 0) {
           return new Map();
@@ -960,7 +964,7 @@ describe("privacy hardening QA smoke", () => {
     expect(response.status).toBe(200);
     const payload = await response.json();
     expect(payload.posts).toHaveLength(1);
-    expect(payload.posts[0].author_account_id).toBeNull();
+    expect(payload.posts[0]).not.toHaveProperty("author_account_id");
     expect(payload.posts[0].author_actor_id).toBe("actor_other");
     expect(payload.posts[0].author_display_handle).toBe("anon_worker");
   });
@@ -1037,6 +1041,8 @@ describe("privacy hardening QA smoke", () => {
         displayHandle: "anon_me",
       }),
       isActorIdModeEnabled: jest.fn(() => true),
+      resolveContextAccountIdsByActorPairs: jest.fn().mockResolvedValue(new Map()),
+      resolveContextAccountIdByActorId: jest.fn().mockResolvedValue(null),
       resolveContextActorIdentityMap: jest.fn().mockResolvedValue(new Map()),
     }));
 
@@ -1050,7 +1056,7 @@ describe("privacy hardening QA smoke", () => {
 
     expect(response.status).toBe(200);
     const payload = await response.json();
-    expect(payload.post.author_account_id).toBeNull();
+    expect(payload.post).not.toHaveProperty("author_account_id");
     expect(payload.post.author_actor_id).toBeNull();
     expect(payload.post.author_display_handle).toBe("unknown");
     expect(getDetailedPostByContextAndIdMock).toHaveBeenCalledTimes(1);
@@ -1118,6 +1124,7 @@ describe("privacy hardening QA smoke", () => {
         displayHandle: "anon_me",
       }),
       isActorIdModeEnabled: jest.fn(() => true),
+      resolveContextAccountIdsByActorPairs: jest.fn().mockResolvedValue(new Map()),
       resolveContextAccountIdsByActorIds: resolveContextAccountIdsByActorIdsMock,
       resolveContextAccountIdByActorId: jest.fn(),
       resolveContextActorIdentityMap: jest.fn().mockResolvedValue(new Map()),
@@ -1218,6 +1225,7 @@ describe("privacy hardening QA smoke", () => {
         displayHandle: "anon_member",
       }),
       isActorIdModeEnabled: jest.fn(() => true),
+      resolveContextAccountIdsByActorPairs: jest.fn().mockResolvedValue(new Map()),
       resolveContextAccountIdsByActorIds: jest.fn().mockResolvedValue(new Map()),
       resolveContextAccountIdByActorId: jest.fn(),
       resolveContextActorIdentityMap: jest.fn().mockResolvedValue(new Map()),

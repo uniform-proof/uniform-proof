@@ -148,6 +148,116 @@ describe("auth-domain billing gate", () => {
     expect(issueAppSessionTokenMock).not.toHaveBeenCalled();
   });
 
+  test("returns BILLING_REQUIRED when membership pass is invalid for gated account", async () => {
+    const { verifyMembershipPassMock, issueAppSessionTokenMock } = mockSharedAuthDependencies({
+      gated: true,
+      vaultEnabled: true,
+      passState: {
+        valid: false,
+        entitlementStatus: "inactive",
+        provider: "stripe",
+        status: "invalid",
+        reason: "PASS_INVALID",
+        effectiveUntil: null,
+      },
+    });
+
+    const { handleVerifySessionChallenge } = await import("@/server/domains/auth-domain");
+
+    const response = await handleVerifySessionChallenge(
+      new Request("http://localhost/api/auth/session/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          challenge_id: "challenge_1",
+          challenge: "challenge_payload",
+          signature: "signature_payload",
+          membership_pass: "ump_invalid1234567890",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(402);
+    const payload = await response.json();
+    expect(payload.code).toBe("BILLING_REQUIRED");
+    expect(payload.billing?.provider).toBe("stripe");
+    expect(payload.billing?.status).toBe("invalid");
+    expect(payload.billing?.reason).toBe("pass_invalid");
+    expect(payload.billing?.redirectTo).toContain("provider=stripe");
+    expect(verifyMembershipPassMock).toHaveBeenCalledTimes(1);
+    expect(issueAppSessionTokenMock).not.toHaveBeenCalled();
+  });
+
+  test("returns BILLING_REQUIRED when entitlement is inactive for gated account", async () => {
+    const { verifyMembershipPassMock, issueAppSessionTokenMock } = mockSharedAuthDependencies({
+      gated: true,
+      vaultEnabled: true,
+      passState: {
+        valid: true,
+        entitlementStatus: "inactive",
+        provider: "stripe",
+        status: "inactive",
+        reason: "entitlement_inactive",
+        effectiveUntil: "2026-01-01T00:00:00.000Z",
+      },
+    });
+
+    const { handleVerifySessionChallenge } = await import("@/server/domains/auth-domain");
+
+    const response = await handleVerifySessionChallenge(
+      new Request("http://localhost/api/auth/session/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          challenge_id: "challenge_1",
+          challenge: "challenge_payload",
+          signature: "signature_payload",
+          membership_pass: "ump_inactive1234567890",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(402);
+    const payload = await response.json();
+    expect(payload.code).toBe("BILLING_REQUIRED");
+    expect(payload.billing?.provider).toBe("stripe");
+    expect(payload.billing?.status).toBe("inactive");
+    expect(payload.billing?.reason).toBe("entitlement_inactive");
+    expect(payload.billing?.effectiveUntil).toBe("2026-01-01T00:00:00.000Z");
+    expect(verifyMembershipPassMock).toHaveBeenCalledTimes(1);
+    expect(issueAppSessionTokenMock).not.toHaveBeenCalled();
+  });
+
+  test("returns BILLING_REQUIRED_OUTAGE when membership verification throws", async () => {
+    const { verifyMembershipPassMock, issueAppSessionTokenMock } = mockSharedAuthDependencies({
+      gated: true,
+      vaultEnabled: true,
+    });
+    verifyMembershipPassMock.mockRejectedValueOnce(new Error("vault unreachable"));
+
+    const { handleVerifySessionChallenge } = await import("@/server/domains/auth-domain");
+
+    const response = await handleVerifySessionChallenge(
+      new Request("http://localhost/api/auth/session/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          challenge_id: "challenge_1",
+          challenge: "challenge_payload",
+          signature: "signature_payload",
+          membership_pass: "ump_error1234567890",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    const payload = await response.json();
+    expect(payload.code).toBe("BILLING_REQUIRED_OUTAGE");
+    expect(payload.billing?.reason).toBe("vault_unreachable");
+    expect(verifyMembershipPassMock).toHaveBeenCalledTimes(1);
+    expect(issueAppSessionTokenMock).not.toHaveBeenCalled();
+  });
+
   test("issues session token for gated account when billing mode is free", async () => {
     process.env.BILLING_MODE = "free";
     const { verifyMembershipPassMock, issueAppSessionTokenMock } = mockSharedAuthDependencies({

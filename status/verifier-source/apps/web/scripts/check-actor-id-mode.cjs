@@ -4,6 +4,8 @@ const fs = require("fs");
 const path = require("path");
 
 const webRoot = path.resolve(__dirname, "..");
+const repoRoot = path.resolve(webRoot, "..", "..");
+const sourceExtensions = new Set([".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"]);
 
 const checks = [
   {
@@ -33,6 +35,35 @@ const checks = [
   },
 ];
 
+const forbiddenActivePatterns = [
+  { label: "legacy post/comment account id field", regex: /\bauthor_account_id\b/ },
+  { label: "legacy dm sender account id field", regex: /\bsender_account_id\b/ },
+  { label: "legacy thread preview sender account id field", regex: /\blast_message_sender_account_id\b/ },
+];
+
+const activeSourceRoots = [
+  path.join(webRoot, "src"),
+  path.join(repoRoot, "apps", "mobile"),
+  path.join(repoRoot, "packages", "api-client"),
+];
+
+function walk(dir, files = []) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name === "node_modules" || entry.name === ".next" || entry.name === ".expo") {
+        continue;
+      }
+      walk(fullPath, files);
+      continue;
+    }
+    if (sourceExtensions.has(path.extname(entry.name))) {
+      files.push(fullPath);
+    }
+  }
+  return files;
+}
+
 const failures = [];
 
 for (const check of checks) {
@@ -48,6 +79,21 @@ for (const check of checks) {
     failures.push(
       `${check.file} is missing required markers: ${missingPatterns.join(", ")}`,
     );
+  }
+}
+
+for (const root of activeSourceRoots) {
+  if (!fs.existsSync(root)) continue;
+  for (const filePath of walk(root)) {
+    if (filePath.includes(`${path.sep}__tests__${path.sep}`)) continue;
+    const source = fs.readFileSync(filePath, "utf8");
+    for (const check of forbiddenActivePatterns) {
+      if (check.regex.test(source)) {
+        failures.push(
+          `${path.relative(webRoot, filePath)} still references ${check.label}`,
+        );
+      }
+    }
   }
 }
 

@@ -1,0 +1,93 @@
+name: Worker Privacy Report Card
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  verify-worker-privacy:
+    name: Verify Worker Privacy Controls
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate worker privacy report card
+        id: report
+        run: |
+          npm run check:worker-privacy-report-card
+          OVERALL_STATUS=$(node -e "const fs=require('fs'); const p='./artifacts/privacy-report-card/privacy-report-card.json'; const j=JSON.parse(fs.readFileSync(p,'utf8')); process.stdout.write(String(j.overall_status || 'UNKNOWN'));")
+          echo "overall_status=$OVERALL_STATUS" >> "$GITHUB_OUTPUT"
+
+      - name: Upload report card artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: worker-privacy-report-card
+          path: artifacts/privacy-report-card
+          if-no-files-found: error
+
+      - name: Publish report card to uniform-proof
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          UNIFORM_PROOF_PUSH_TOKEN: ${{ secrets.UNIFORM_PROOF_PUSH_TOKEN }}
+          UNIFORM_PROOF_REPO: uniform-proof/uniform-proof
+        run: |
+          if [ -z "$UNIFORM_PROOF_PUSH_TOKEN" ]; then
+            echo "UNIFORM_PROOF_PUSH_TOKEN must be configured to publish the worker privacy report card."
+            exit 1
+          fi
+
+          git clone "https://x-access-token:${UNIFORM_PROOF_PUSH_TOKEN}@github.com/${UNIFORM_PROOF_REPO}.git" /tmp/uniform-proof
+          mkdir -p /tmp/uniform-proof/status
+          mkdir -p /tmp/uniform-proof/status/history
+          mkdir -p /tmp/uniform-proof/status/verifier-source
+          cp artifacts/privacy-report-card/privacy-report-card.json /tmp/uniform-proof/status/privacy-report-card.json
+          cp artifacts/privacy-report-card/privacy-report-card.md /tmp/uniform-proof/status/privacy-report-card.md
+          cp artifacts/privacy-report-card/worker-privacy-claim-map.json /tmp/uniform-proof/status/worker-privacy-claim-map.json
+          cp -R artifacts/privacy-report-card/verifier-source/. /tmp/uniform-proof/status/verifier-source/
+          cp artifacts/privacy-report-card/privacy-report-card.json "/tmp/uniform-proof/status/history/privacy-report-card-${GITHUB_SHA}.json"
+
+          cd /tmp/uniform-proof
+          git config user.name "uniform-bot"
+          git config user.email "uniform-bot@users.noreply.github.com"
+          git add \
+            status/privacy-report-card.json \
+            status/privacy-report-card.md \
+            status/worker-privacy-claim-map.json \
+            status/verifier-source \
+            status/history/privacy-report-card-${GITHUB_SHA}.json
+
+          if git diff --cached --quiet; then
+            echo "No report-card changes to publish."
+            exit 0
+          fi
+
+          git commit -m "Update worker privacy report card (${GITHUB_SHA::7})"
+          git push origin main
+
+      - name: Enforce fail-closed privacy gate
+        if: always()
+        run: |
+          STATUS="${{ steps.report.outputs.overall_status }}"
+          echo "Worker privacy report card status: $STATUS"
+          if [ "$STATUS" != "PASS" ]; then
+            echo "Worker privacy verification failed."
+            exit 1
+          fi

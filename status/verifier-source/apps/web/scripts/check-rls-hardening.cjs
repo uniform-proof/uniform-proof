@@ -60,6 +60,20 @@ const checks = [
       "DROP TABLE IF EXISTS public.account_subscription_states CASCADE",
     ],
   },
+  {
+    file: "20260311110000_actor_hard_cut_cleanup.sql",
+    markers: [
+      "CREATE POLICY posts_insert_actor_member",
+      "CREATE POLICY comments_insert_actor_member",
+      "CREATE POLICY dm_messages_insert_actor_member",
+      "DROP COLUMN IF EXISTS author_account_id CASCADE",
+      "DROP COLUMN IF EXISTS sender_account_id CASCADE",
+      "DROP TABLE IF EXISTS public.account_member_links CASCADE",
+      "DROP TABLE IF EXISTS public.member_profiles CASCADE",
+      "DROP TABLE IF EXISTS public.account_entitlements CASCADE",
+      "DROP TABLE IF EXISTS public.entitlements CASCADE",
+    ],
+  },
 ];
 
 const failures = [];
