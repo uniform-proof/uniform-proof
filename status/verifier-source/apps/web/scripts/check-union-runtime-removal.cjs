@@ -22,7 +22,10 @@ const requiredChecks = [
     patterns: ['redirect("/app")'],
   },
   {
-    file: "apps/mobile/app/(tabs)/union.tsx",
+    files: [
+      "apps/mobile/app/union.tsx",
+      "apps/mobile/app/(tabs)/union.tsx",
+    ],
     patterns: ['router.replace("/(tabs)/feed"'],
   },
   {
@@ -56,34 +59,46 @@ const forbiddenChecks = [
 
 const failures = [];
 
+function getCheckFiles(check) {
+  if (Array.isArray(check.files) && check.files.length > 0) {
+    return check.files;
+  }
+
+  return check.file ? [check.file] : [];
+}
+
 for (const check of requiredChecks) {
-  const absPath = path.join(repoRoot, check.file);
-  if (!fs.existsSync(absPath)) {
-    failures.push(`Missing required file: ${check.file}`);
+  const files = getCheckFiles(check);
+  const matchedFile = files.find((file) => fs.existsSync(path.join(repoRoot, file)));
+
+  if (!matchedFile) {
+    failures.push(`Missing required file: ${files.join(" or ")}`);
     continue;
   }
 
-  const source = fs.readFileSync(absPath, "utf8");
+  const source = fs.readFileSync(path.join(repoRoot, matchedFile), "utf8");
   const missingPatterns = check.patterns.filter((pattern) => !source.includes(pattern));
   if (missingPatterns.length > 0) {
     failures.push(
-      `${check.file} is missing required markers: ${missingPatterns.join(", ")}`,
+      `${matchedFile} is missing required markers: ${missingPatterns.join(", ")}`,
     );
   }
 }
 
 for (const check of forbiddenChecks) {
-  const absPath = path.join(repoRoot, check.file);
-  if (!fs.existsSync(absPath)) {
-    failures.push(`Missing checked file: ${check.file}`);
+  const files = getCheckFiles(check);
+  const matchedFile = files.find((file) => fs.existsSync(path.join(repoRoot, file)));
+
+  if (!matchedFile) {
+    failures.push(`Missing checked file: ${files.join(" or ")}`);
     continue;
   }
 
-  const source = fs.readFileSync(absPath, "utf8");
+  const source = fs.readFileSync(path.join(repoRoot, matchedFile), "utf8");
   const presentPatterns = check.patterns.filter((pattern) => source.includes(pattern));
   if (presentPatterns.length > 0) {
     failures.push(
-      `${check.file} still contains removed union surface markers: ${presentPatterns.join(", ")}`,
+      `${matchedFile} still contains removed union surface markers: ${presentPatterns.join(", ")}`,
     );
   }
 }
