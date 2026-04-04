@@ -1,10 +1,10 @@
 # Worker Privacy Report Card
 
 - Overall status: **PASS**
-- Generated at (UTC): 2026-04-04T20:42:04.063Z
+- Generated at (UTC): 2026-04-04T20:55:19.586Z
 - Source repo: https://github.com/tubularity/uniform-zk
-- Source commit: `67be1023f52acf44c5a9adf92e27db1586f9f08d`
-- Verification run: https://github.com/tubularity/uniform-zk/actions/runs/23987161764
+- Source commit: `a1c6f9b86651c136011eb9bb9cbc0ba8728c1e16`
+- Verification run: https://github.com/tubularity/uniform-zk/actions/runs/23987380034
 - Claim map: https://github.com/uniform-proof/uniform-proof/blob/main/status/worker-privacy-claim-map.json
 - Verifier source snapshot: https://github.com/uniform-proof/uniform-proof/tree/main/status/verifier-source
 
@@ -12,9 +12,9 @@
 
 | Check | Status | Duration (ms) |
 | --- | --- | ---: |
-| Privacy hardening guardrails | PASS | 2287 |
-| Privacy hardening QA suite | PASS | 2188 |
-| Billing gate auth suite | PASS | 2031 |
+| Privacy hardening guardrails | PASS | 2254 |
+| Privacy hardening QA suite | PASS | 2148 |
+| Billing gate auth suite | PASS | 2025 |
 
 ## Commands
 
